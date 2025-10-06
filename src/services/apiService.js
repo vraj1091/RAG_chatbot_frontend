@@ -8,7 +8,6 @@ class ApiService {
     this.api = axios.create({
       baseURL: API_BASE_URL,
       headers: { 'Content-Type': 'application/json' },
-      withCredentials: true, // add this for cookie support if backend sends cookies
     });
 
     this.api.interceptors.request.use((config) => {
@@ -50,11 +49,37 @@ class ApiService {
     return response.data;
   }
 
+  async uploadDocument(file, onUploadProgress = null) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await this.api.post('/documents/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onUploadProgress
+        ? (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onUploadProgress(percentCompleted);
+          }
+        : undefined,
+    });
+    return response.data;
+  }
+
+  async getDocuments(skip = 0, limit = 50) {
+    const response = await this.api.get(`/documents/?skip=${skip}&limit=${limit}`);
+    return response.data;
+  }
+
+  async deleteDocument(documentId) {
+    const response = await this.api.delete(`/documents/${documentId}`);
+    return response.data;
+  }
+
   async getDocumentStats() {
     const response = await this.api.get('/documents/stats');
     return response.data;
   }
 
+  // Updated sendMessage with error handling
   async sendMessage(message, conversationId = null, mode = 'rag') {
     const params = new URLSearchParams();
     if (mode) params.append('mode', mode);
