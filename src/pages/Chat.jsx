@@ -10,15 +10,18 @@ function Chat() {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [conversationsLoading, setConversationsLoading] = useState(true);
-  const [chatMode, setChatMode] = useState('rag'); // default to RAG mode
+  const [chatMode, setChatMode] = useState('rag');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
     scrollToBottom();
+    // eslint-disable-next-line
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -30,7 +33,7 @@ function Chat() {
       setConversationsLoading(true);
       const data = await apiService.getConversations();
       setConversations(data);
-      if (data.length === 0) setChatMode('general'); // No docs -> set general mode
+      if (data.length === 0) setChatMode('general');
     } catch (err) {
       toast.error('Failed to load chat history');
     } finally {
@@ -44,6 +47,7 @@ function Chat() {
       const messages = await apiService.getConversationMessages(conversationId);
       setCurrentConversation(conversations.find(c => c.id === conversationId));
       setMessages(messages);
+      setSidebarOpen(false);
     } catch (err) {
       toast.error('Failed to load conversation');
     } finally {
@@ -68,7 +72,6 @@ function Chat() {
     setMessages(prev => [...prev, tempMessage]);
 
     try {
-      // Pass chatMode as query param 'mode' to backend
       const response = await apiService.sendMessage(userMessage, currentConversation?.id, chatMode);
 
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
@@ -93,13 +96,12 @@ function Chat() {
       setMessages(prev => [...prev, ...newMessages]);
 
       if (!currentConversation || currentConversation.id !== response.conversation_id) {
-        setCurrentConversation({ 
+        setCurrentConversation({
           id: response.conversation_id,
           title: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '')
         });
         await loadConversations();
       }
-
     } catch (err) {
       toast.error('Failed to send message');
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
@@ -111,6 +113,7 @@ function Chat() {
   const startNewConversation = () => {
     setCurrentConversation(null);
     setMessages([]);
+    setSidebarOpen(false);
   };
 
   const formatDate = (dateString) => {
@@ -123,11 +126,26 @@ function Chat() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[calc(100vh-8rem)] flex">
-      {/* Conversations Sidebar */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[calc(100vh-8rem)] flex flex-col sm:flex-row">
+      {/* Sidebar as Drawer on mobile, static on desktop */}
+      <div
+        className={`
+          fixed top-0 left-0 z-40 w-3/4 max-w-xs h-full bg-white shadow-lg border-r border-gray-200 transform
+          transition-transform duration-200
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          sm:relative sm:translate-x-0 sm:w-80 sm:max-w-none sm:h-auto
+        `}
+        style={{ minWidth: 250 }}
+      >
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between sm:block">
           <h2 className="text-lg font-semibold text-gray-900">💬 Chat History</h2>
+          <button
+            className="sm:hidden text-2xl text-gray-500 p-2 focus:outline-none"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close chat history"
+          >
+            ×
+          </button>
           <button onClick={startNewConversation} className="w-full mt-3 btn-primary">
             ➕ New Chat
           </button>
@@ -136,17 +154,13 @@ function Chat() {
         <div className="p-4 flex space-x-2">
           {/* Mode toggle buttons */}
           <button
-            className={`flex-1 px-3 py-1 rounded ${
-              chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
-            }`}
+            className={`flex-1 px-3 py-1 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
             onClick={() => setChatMode('general')}
           >
             General Chat
           </button>
           <button
-            className={`flex-1 px-3 py-1 rounded ${
-              chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
-            } ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex-1 px-3 py-1 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => conversations.length > 0 && setChatMode('rag')}
             disabled={conversations.length === 0}
             title={conversations.length === 0 ? 'Upload documents to enable RAG mode' : ''}
@@ -166,9 +180,9 @@ function Chat() {
               {conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
-                    currentConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-500' : 'hover:bg-gray-50'
-                  }`}
+                  className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors
+                    ${currentConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-500' : 'hover:bg-gray-50'}
+                  `}
                   onClick={() => loadConversation(conversation.id)}
                 >
                   <p className="text-sm font-medium text-gray-900 truncate">{conversation.title}</p>
@@ -187,17 +201,23 @@ function Chat() {
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            ✨ {currentConversation ? currentConversation.title : 'AI RAG Chat'}
-          </h3>
-          <p className="text-sm text-gray-500"></p>
+        {/* Topbar: show hamburger on mobile */}
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between sm:justify-start">
+          <button
+            className="sm:hidden px-2 py-2 rounded text-primary-600 focus:outline-none"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open chat history"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center ml-0 sm:ml-2">{currentConversation ? currentConversation.title : 'AI RAG Chat'}</h3>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 {chatMode === 'rag' ? 'Start a RAG conversation' : 'Start a general chat'}
               </h3>
@@ -212,20 +232,18 @@ function Chat() {
               {messages.map((message) => (
                 <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                    className={`max-w-[85vw] sm:max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                       message.role === 'user'
                         ? 'bg-primary-600 text-white ml-auto'
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
                     {message.role === 'assistant' && message.context_used && chatMode === 'rag' && (
                       <div className="mt-2 text-xs text-primary-600 flex items-center">
                         ✨ Answered using knowledge base
                       </div>
                     )}
-
                     {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-600 mb-2">📄 Sources:</p>
@@ -254,8 +272,8 @@ function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <form onSubmit={sendMessage} className="flex items-center space-x-3">
+        <div className="border-t border-gray-200 p-3 bg-gray-50">
+          <form onSubmit={sendMessage} className="flex items-center space-x-2 sm:space-x-3">
             <input
               type="text"
               value={currentMessage}
@@ -263,6 +281,7 @@ function Chat() {
               placeholder={chatMode === 'rag' ? "Ask me anything about your documents..." : "Chat freely without documents..."}
               className="flex-1 input-field"
               disabled={loading}
+              autoFocus
             />
             <button
               type="submit"
@@ -272,10 +291,8 @@ function Chat() {
               {loading ? <LoadingSpinner size="small" color="white" /> : '🚀'}
             </button>
           </form>
-
           <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
             <span>💡 Tip: Upload documents in Knowledge Base to get better answers</span>
-            
           </div>
         </div>
       </div>
