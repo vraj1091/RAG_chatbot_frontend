@@ -111,13 +111,14 @@ function Chat() {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
 
+  // Sidebar for both mobile and desktop
   const Sidebar = (
     <div className={`
       fixed top-0 left-0 z-40 w-11/12 max-w-xs h-full bg-white shadow-lg border-r border-gray-200
       sm:relative sm:block sm:w-80 sm:max-w-none sm:h-auto sm:z-0 sm:shadow-none sm:border-none
       ${sidebarOpen ? 'block' : 'hidden'} sm:block
     `} style={{ minWidth: 250 }}>
-      <div className="flex flex-col gap-0 border-b border-gray-200 p-0">
+      <div className="flex flex-col border-b border-gray-200 p-0">
         <div className="flex flex-row items-center justify-between p-4">
           <h2 className="text-lg font-semibold text-gray-900">💬 Chat History</h2>
           <button
@@ -130,20 +131,20 @@ function Chat() {
         </div>
         <button
           onClick={startNewConversation}
-          className="w-full px-4 py-3 btn-primary rounded-none border-b border-gray-200 text-lg"
+          className="w-full px-4 py-3 btn-primary rounded-none border-b border-gray-200 text-base sm:text-lg"
           style={{ borderRadius: 0 }}
         >
           ➕ New Chat
         </button>
         <div className="flex flex-row items-center gap-1 p-3 border-b border-gray-200">
           <button
-            className={`flex-1 px-2 py-1 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-xs`}
+            className={`flex-1 px-2 py-2 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold`}
             onClick={() => setChatMode('general')}
           >
             General Chat
           </button>
           <button
-            className={`flex-1 px-2 py-1 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-xs ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex-1 px-2 py-2 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => conversations.length > 0 && setChatMode('rag')}
             disabled={conversations.length === 0}
             title={conversations.length === 0 ? 'Upload documents to enable RAG mode' : ''}
@@ -231,10 +232,10 @@ function Chat() {
                   key={message.id}
                   className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`rounded-2xl px-4 py-3 max-w-[85vw] sm:max-w-lg break-words
+                    className={`rounded-2xl px-4 py-3 max-w-[80vw] sm:max-w-lg break-words
                       ${message.role === 'user'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-900'}
+                        ? 'bg-primary-600 text-white text-right'
+                        : 'bg-gray-100 text-gray-900 text-left'}
                     `}
                     style={{
                       wordBreak: 'break-word',
@@ -242,7 +243,6 @@ function Chat() {
                       borderTopLeftRadius: message.role === 'assistant' ? '2rem' : '1.5rem'
                     }}
                   >
-                    {/* Render user message on the right, assistant on the left */}
                     <p className="text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
                     {message.role === 'assistant' && message.context_used && chatMode === 'rag' && (
                       <div className="mt-2 text-xs text-primary-600 flex items-center">
@@ -278,13 +278,14 @@ function Chat() {
         </div>
         {/* Input bar */}
         <div className="border-t border-gray-200 p-3 bg-gray-50 w-full">
-          <form onSubmit={sendMessage} className="flex gap-2">
+          <form onSubmit={sendMessage} className="flex gap-2 items-stretch">
             <input
               type="text"
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
               placeholder={chatMode === 'rag' ? "Ask me anything about your documents..." : "Chat freely without documents..."}
-              className="flex-1 input-field min-h-[44px] sm:text-base text-sm"
+              className="flex-1 input-field min-h-[44px] sm:text-base text-sm bg-white"
+              style={{ borderRadius: '0.75rem' }}
               disabled={loading}
               autoFocus
             />
@@ -292,6 +293,7 @@ function Chat() {
               type="submit"
               disabled={loading || !currentMessage.trim()}
               className="btn-primary px-4 sm:text-base text-xl h-[44px] flex items-center justify-center"
+              style={{ minWidth: '44px', maxWidth: '54px' }}
             >
               {loading ? <LoadingSpinner size="small" color="white" /> : '🚀'}
             </button>
