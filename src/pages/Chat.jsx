@@ -111,16 +111,12 @@ function Chat() {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
 
-  // Sidebar for both mobile (modal) and desktop
   const Sidebar = (
-    <div
-      className={`
-        fixed top-0 left-0 z-40 w-11/12 max-w-xs h-full bg-white shadow-lg border-r border-gray-200
-        sm:relative sm:translate-x-0 sm:w-80 sm:max-w-none sm:h-auto sm:z-0 sm:shadow-none sm:border-none
-        ${sidebarOpen ? 'block' : 'hidden'} sm:block
-      `}
-      style={{ minWidth: 250 }}
-    >
+    <div className={`
+      fixed top-0 left-0 z-40 w-11/12 max-w-xs h-full bg-white shadow-lg border-r border-gray-200
+      sm:relative sm:block sm:w-80 sm:max-w-none sm:h-auto sm:z-0 sm:shadow-none sm:border-none
+      ${sidebarOpen ? 'block' : 'hidden'} sm:block
+    `} style={{ minWidth: 250 }}>
       <div className="flex flex-col gap-0 border-b border-gray-200 p-0">
         <div className="flex flex-row items-center justify-between p-4">
           <h2 className="text-lg font-semibold text-gray-900">💬 Chat History</h2>
@@ -182,7 +178,6 @@ function Chat() {
     </div>
   );
 
-  // Backdrop for the sidebar on mobile
   const SidebarBackdrop = (
     sidebarOpen && (
       <div
@@ -195,13 +190,12 @@ function Chat() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[calc(100vh-8rem)] flex flex-col sm:flex-row relative">
-      {/* Sidebar and overlay */}
       {SidebarBackdrop}
       {Sidebar}
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col overflow-x-hidden">
-        {/* Topbar: show hamburger on mobile */}
+        {/* Topbar */}
         <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between sm:justify-start">
           <button
             className="sm:hidden px-2 py-2 rounded text-primary-600 focus:outline-none"
@@ -209,7 +203,7 @@ function Chat() {
             aria-label="Open chat history"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
           <h3 className="text-lg font-semibold text-gray-900 flex items-center ml-0 sm:ml-2 truncate">
@@ -233,15 +227,22 @@ function Chat() {
           ) : (
             <>
               {messages.map((message) => (
-                <div key={message.id} className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={message.id}
+                  className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`rounded-2xl px-4 py-3 max-w-[85vw] sm:max-w-lg break-words
                       ${message.role === 'user'
                         ? 'bg-primary-600 text-white'
                         : 'bg-gray-100 text-gray-900'}
                     `}
-                    style={{ wordBreak: 'break-word' }}
+                    style={{
+                      wordBreak: 'break-word',
+                      borderTopRightRadius: message.role === 'user' ? '2rem' : '1.5rem',
+                      borderTopLeftRadius: message.role === 'assistant' ? '2rem' : '1.5rem'
+                    }}
                   >
+                    {/* Render user message on the right, assistant on the left */}
                     <p className="text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
                     {message.role === 'assistant' && message.context_used && chatMode === 'rag' && (
                       <div className="mt-2 text-xs text-primary-600 flex items-center">
