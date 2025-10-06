@@ -1,7 +1,7 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://huggingface.co/spaces/vraj1091/RAG_chatbot/api/v1'
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://vraj1091-rag-chatbot.hf.space/api/v1'
 ';
 
 class ApiService {
