@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 
+
 // Lazy load pages and components
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
@@ -11,6 +12,7 @@ const KnowledgeBase = lazy(() => import('./pages/KnowledgeBase.jsx'));
 const Chat = lazy(() => import('./pages/Chat.jsx'));
 const Layout = lazy(() => import('./components/Layout.jsx'));
 const LoadingSpinner = lazy(() => import('./components/LoadingSpinner.jsx'));
+
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -28,6 +30,7 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
+
 function PublicRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
@@ -44,6 +47,7 @@ function PublicRoute({ children }) {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
 }
 
+
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -51,12 +55,14 @@ function App() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  // Model status state: starts as not loaded, not loading
   const [modelStatus, setModelStatus] = useState({
     loaded: false,
     loading: false,
     status: 'not_loaded',
   });
 
+  // Dark mode effect
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -66,40 +72,33 @@ function App() {
     localStorage.setItem('darkMode', darkMode);
   }, [darkMode]);
 
+  // Load model asynchronously after initial render - UI shows immediately
   useEffect(() => {
-    const checkModelStatus = async () => {
+    const preloadModel = async () => {
+      if (modelStatus.loaded || modelStatus.loading) return;
       try {
-        const response = await fetch('/api/model/status');
-        const status = await response.json();
-        setModelStatus(status);
+        setModelStatus({ loaded: false, loading: true, status: 'loading' });
+        const response = await fetch('/api/model/preload', { method: 'POST' });
+        const result = await response.json();
+        if (result.status === 'loading_started') {
+          const poll = setInterval(async () => {
+            const statusResp = await fetch('/api/model/status');
+            const status = await statusResp.json();
+            setModelStatus(status);
+            if (status.loaded) {
+              clearInterval(poll);
+            }
+          }, 1000);
+        }
       } catch (err) {
-        console.error('Failed to fetch model status', err);
+        console.error('Failed to preload model', err);
+        setModelStatus({ loaded: false, loading: false, status: 'not_loaded' });
       }
     };
-    checkModelStatus();
-  }, []);
 
-  const preloadModel = async () => {
-    if (modelStatus.loaded || modelStatus.loading) return;
-    try {
-      setModelStatus((prev) => ({ ...prev, loading: true }));
-      const response = await fetch('/api/model/preload', { method: 'POST' });
-      const result = await response.json();
-      if (result.status === 'loading_started') {
-        const poll = setInterval(async () => {
-          const statusResp = await fetch('/api/model/status');
-          const status = await statusResp.json();
-          setModelStatus(status);
-          if (status.loaded) {
-            clearInterval(poll);
-          }
-        }, 1000);
-      }
-    } catch (err) {
-      console.error('Failed to preload model', err);
-      setModelStatus((prev) => ({ ...prev, loading: false }));
-    }
-  };
+    // Call preloadModel asynchronously without blocking UI rendering
+    preloadModel();
+  }, []);
 
   const DarkModeToggle = () => (
     <button
@@ -145,7 +144,7 @@ function App() {
                 path="/chat"
                 element={
                   <ProtectedRoute>
-                    <Layout extraHeaderRight={<DarkModeToggle />} modelStatus={modelStatus} preloadModel={preloadModel}>
+                    <Layout extraHeaderRight={<DarkModeToggle />} modelStatus={modelStatus}>
                       <Chat />
                     </Layout>
                   </ProtectedRoute>
