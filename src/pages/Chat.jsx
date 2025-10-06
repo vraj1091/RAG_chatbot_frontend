@@ -14,9 +14,19 @@ function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
-  useEffect(() => { loadConversations(); /* eslint-disable-next-line */ }, []);
-  useEffect(() => { scrollToBottom(); /* eslint-disable-next-line */ }, [messages]);
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => {
+    loadConversations();
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+    // eslint-disable-next-line
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const loadConversations = async () => {
     try {
@@ -82,6 +92,7 @@ function Chat() {
           context_used: response.context_used
         }
       ];
+
       setMessages(prev => [...prev, ...newMessages]);
 
       if (!currentConversation || currentConversation.id !== response.conversation_id) {
@@ -114,94 +125,120 @@ function Chat() {
     });
   };
 
-  // Overlay for sidebar (mobile)
-  const SidebarModal = () => (
-    <div className="fixed inset-0 z-40 flex">
-      {/* Background overlay */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-30"
-        onClick={() => setSidebarOpen(false)}
-        aria-label="Close sidebar"
-      />
-      {/* Sidebar drawer */}
-      <div className="relative w-4/5 max-w-xs bg-white h-full shadow-xl border-r overflow-y-auto">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold">💬 Chat History</h2>
-          <button className="text-2xl text-gray-500 p-1 focus:outline-none" onClick={() => setSidebarOpen(false)}>×</button>
-        </div>
-        <button onClick={startNewConversation} className="w-full px-3 py-2 btn-primary mb-2">➕ New Chat</button>
-        <div className="p-2 flex space-x-2">
-          <button className={`flex-1 px-3 py-1 rounded text-xs ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setChatMode('general')}>General</button>
-          <button className={`flex-1 px-3 py-1 rounded text-xs ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => conversations.length > 0 && setChatMode('rag')} disabled={conversations.length === 0}>Document</button>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversationsLoading ? (
-            <div className="p-4 text-center"><LoadingSpinner size="medium" /><p className="text-sm text-gray-500 mt-2">Loading...</p></div>
-          ) : conversations.length ? (
-            conversations.map(conversation => (
+  // Sidebar component, drawer mode mobile, static desktop
+  const Sidebar = (
+    <div
+      className={`
+        fixed top-0 left-0 z-40 w-3/4 max-w-xs h-full bg-white shadow-lg border-r border-gray-200 transform
+        transition-transform duration-200
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        sm:relative sm:translate-x-0 sm:w-80 sm:max-w-none sm:h-auto
+      `}
+      style={{ minWidth: 250 }}
+    >
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between sm:block">
+        <h2 className="text-lg font-semibold text-gray-900">💬 Chat History</h2>
+        <button
+          className="sm:hidden text-2xl text-gray-500 p-2 focus:outline-none"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close chat history"
+        >
+          ×
+        </button>
+        <button onClick={startNewConversation} className="w-full mt-3 btn-primary">
+          ➕ New Chat
+        </button>
+      </div>
+
+      <div className="p-4 flex space-x-2">
+        {/* Mode toggle buttons */}
+        <button
+          className={`flex-1 px-3 py-1 rounded ${
+            chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+          onClick={() => setChatMode('general')}
+        >
+          General Chat
+        </button>
+        <button
+          className={`flex-1 px-3 py-1 rounded ${
+            chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
+          } ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => conversations.length > 0 && setChatMode('rag')}
+          disabled={conversations.length === 0}
+          title={conversations.length === 0 ? 'Upload documents to enable RAG mode' : ''}
+        >
+          Document Chat
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {conversationsLoading ? (
+          <div className="p-4 text-center">
+            <LoadingSpinner size="medium" />
+            <p className="text-sm text-gray-500 mt-2">Loading...</p>
+          </div>
+        ) : conversations.length > 0 ? (
+          <div className="p-2">
+            {conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${currentConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-500' : 'hover:bg-gray-50'}`}
+                className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
+                  currentConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-500' : 'hover:bg-gray-50'
+                }`}
                 onClick={() => loadConversation(conversation.id)}
               >
-                <div className="text-sm font-medium text-gray-900 truncate">{conversation.title}</div>
-                <div className="text-xs text-gray-500">{formatDate(conversation.created_at)}</div>
+                <p className="text-sm font-medium text-gray-900 truncate">{conversation.title}</p>
+                <p className="text-xs text-gray-500">{formatDate(conversation.created_at)}</p>
               </div>
-            ))
-          ) : <div className="flex flex-col items-center justify-center h-full p-4"><span className="text-4xl mb-3">💬</span><p className="text-gray-500 text-sm">No chat history</p></div>}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+            <span className="text-4xl mb-3">💬</span>
+            <p className="text-gray-500 text-sm">No chat history yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className="w-full h-full min-h-[calc(100vh-8rem)] bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row">
-      {/* Sidebar (desktop) */}
-      <div className="hidden sm:flex flex-col w-80 border-r border-gray-200 h-full">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">💬 Chat History</h2>
-          <button onClick={startNewConversation} className="w-full mt-3 btn-primary">➕ New Chat</button>
-        </div>
-        <div className="p-4 flex space-x-2">
-          <button className={`flex-1 px-3 py-1 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setChatMode('general')}>General</button>
-          <button className={`flex-1 px-3 py-1 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => conversations.length > 0 && setChatMode('rag')} disabled={conversations.length === 0}>Document</button>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversationsLoading ? (
-            <div className="p-4 text-center"><LoadingSpinner size="medium" /><p className="text-sm text-gray-500 mt-2">Loading...</p></div>
-          ) : conversations.length ? (
-            conversations.map(conversation => (
-              <div
-                key={conversation.id}
-                className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${currentConversation?.id === conversation.id ? 'bg-primary-50 border-l-4 border-primary-500' : 'hover:bg-gray-50'}`}
-                onClick={() => loadConversation(conversation.id)}
-              >
-                <div className="text-sm font-medium text-gray-900 truncate">{conversation.title}</div>
-                <div className="text-xs text-gray-500">{formatDate(conversation.created_at)}</div>
-              </div>
-            ))
-          ) : <div className="flex flex-col items-center justify-center h-full p-4"><span className="text-4xl mb-3">💬</span><p className="text-gray-500 text-sm">No chat history</p></div>}
-        </div>
-      </div>
-      {/* Sidebar Modal (mobile) */}
-      {sidebarOpen && <SidebarModal />}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[calc(100vh-8rem)] flex flex-col sm:flex-row">
+      {/* Sidebar as Drawer on mobile, static on desktop */}
+      {Sidebar}
 
-      {/* Chat Panel */}
-      <div className="flex-1 flex flex-col h-full">
-        {/* Chat Top Bar */}
-        <div className="flex items-center border-b border-gray-200 bg-gray-50 p-2 sm:p-4">
-          <button className="sm:hidden px-2 py-2 mr-2 rounded text-primary-600" onClick={() => setSidebarOpen(true)} aria-label="Open chat history">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Topbar: show hamburger on mobile */}
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between sm:justify-start">
+          <button
+            className="sm:hidden px-2 py-2 rounded text-primary-600 focus:outline-none"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open chat history"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
-          <h3 className="text-lg font-semibold text-gray-900">{currentConversation ? currentConversation.title : 'AI RAG Chat'}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center ml-0 sm:ml-2">
+            {currentConversation ? currentConversation.title : 'AI RAG Chat'}
+          </h3>
         </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 sm:px-4 sm:py-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {chatMode === 'rag' ? 'Start a RAG conversation' : 'Start a general chat'}
+                {chatMode === 'rag'
+                  ? 'Start a RAG conversation'
+                  : 'Start a general chat'}
               </h3>
               <p className="text-gray-500 max-w-sm mb-6">
                 {chatMode === 'rag'
@@ -212,18 +249,25 @@ function Chat() {
           ) : (
             <>
               {messages.map((message) => (
-                <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
                   <div
-                    className={`w-fit break-words max-w-[85vw] sm:max-w-lg px-4 py-3 rounded-2xl ${
+                    className={`max-w-[85vw] sm:max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                       message.role === 'user'
                         ? 'bg-primary-600 text-white ml-auto'
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+
                     {message.role === 'assistant' && message.context_used && chatMode === 'rag' && (
-                      <div className="mt-2 text-xs text-primary-600 flex items-center">✨ Answered using knowledge base</div>
+                      <div className="mt-2 text-xs text-primary-600 flex items-center">
+                        ✨ Answered using knowledge base
+                      </div>
                     )}
+
                     {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-600 mb-2">📄 Sources:</p>
@@ -252,9 +296,8 @@ function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Sticky Input Bar */}
-        <div className="border-t border-gray-200 p-2 sm:p-4 bg-white">
-          <form onSubmit={sendMessage} className="flex gap-2 items-center">
+        <div className="border-t border-gray-200 p-3 bg-gray-50">
+          <form onSubmit={sendMessage} className="flex items-center space-x-2 sm:space-x-3">
             <input
               type="text"
               value={currentMessage}
@@ -267,13 +310,13 @@ function Chat() {
             <button
               type="submit"
               disabled={loading || !currentMessage.trim()}
-              className="btn-primary min-w-[48px] px-4"
+              className="btn-primary px-4 disabled:opacity-50"
             >
               {loading ? <LoadingSpinner size="small" color="white" /> : '🚀'}
             </button>
           </form>
-          <div className="text-xs mt-2 text-gray-500 text-center">
-            💡 Tip: Upload documents in Knowledge Base to get better answers
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span>💡 Tip: Upload documents in Knowledge Base to get better answers</span>
           </div>
         </div>
       </div>
