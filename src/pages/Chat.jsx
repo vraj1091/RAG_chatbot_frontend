@@ -139,13 +139,13 @@ function Chat() {
         </button>
         <div className="flex flex-row items-center gap-1 p-3 border-b border-gray-200">
           <button
-            className={`flex-1 px-2 py-2 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold`}
+            className={`flex-1 px-2 py-3 rounded ${chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold`}
             onClick={() => setChatMode('general')}
           >
             General Chat
           </button>
           <button
-            className={`flex-1 px-2 py-2 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex-1 px-2 py-3 rounded ${chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => conversations.length > 0 && setChatMode('rag')}
             disabled={conversations.length === 0}
             title={conversations.length === 0 ? 'Upload documents to enable RAG mode' : ''}
