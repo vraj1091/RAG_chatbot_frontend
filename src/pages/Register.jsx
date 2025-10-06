@@ -40,9 +40,7 @@ function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-blue-100 py-12 px-4">
       <div className="max-w-md w-full space-y-8 animate-fade-in">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-primary-600 rounded-xl flex items-center justify-center mb-6 shadow-lg">
-            <span className="text-2xl">🤖</span>
-          </div>
+
           <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">Start building your personalized AI knowledge base</p>
         </div>
