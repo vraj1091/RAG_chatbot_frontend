@@ -153,7 +153,7 @@ function Chat() {
       <div className="p-4 flex space-x-2">
         {/* Mode toggle buttons */}
         <button
-          className={`flex-1 px-3 py-3 rounded ${
+          className={`flex-1 px-3 py-2 rounded ${
             chatMode === 'general' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
           }`}
           onClick={() => setChatMode('general')}
@@ -161,7 +161,7 @@ function Chat() {
           General Chat
         </button>
         <button
-          className={`flex-1 px-3 py-3 rounded ${
+          className={`flex-1 px-3 py-2 rounded ${
             chatMode === 'rag' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
           } ${conversations.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={() => conversations.length > 0 && setChatMode('rag')}
